@@ -54,6 +54,14 @@ class BoostSH(BaseEstimator, ClassifierMixin):
 
         return model, edge, forecast
 
+    def view_weights(self):
+        """
+            Return relative importance of the different views in the final decision
+        """
+        assert len(self.models) > 0, 'Model not trained'
+        view_weights = pd.DataFrame({"view": self.views_selected, "alpha": np.abs(self.alphas)})
+        return view_weights.groupby('view').sum() / np.sum(np.abs(self.alphas))
+
     def fit(self, X, Y, edge_estimation_cv = None):
         """
             Fit the model by adding models in a adaboost fashion
