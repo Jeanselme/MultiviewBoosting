@@ -1,4 +1,5 @@
 from models.boostSH import BoostSH
+
 import pandas as pd
 import numpy as np
 
@@ -22,7 +23,7 @@ class RBoostSH(BoostSH):
         super(RBoostSH, self).__init__(basemodel, views, num_estimators)
         self.sigma = sigma
         self.gamma = gamma
-               
+
     def fit(self, X, Y, edge_estimation_cv = None):
         """
             Fit the model by adding models in a adaboost fashion
