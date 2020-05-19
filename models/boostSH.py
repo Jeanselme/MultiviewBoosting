@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from scipy.optimize import minimize
 from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.model_selection import cross_val_predict
 
@@ -50,7 +49,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         else:
             forecast = cross_val_predict(clone(self.basemodel), data, labels, \
                 cv = edge_estimation_cv, fit_params = {'sample_weight': weights})
-        edge = (weights * forecast * 2 * ((forecast == labels) - .5)).sum()
+        edge = (weights * 2 * ((forecast == labels) - .5)).sum()
 
         return model, edge, forecast
 
@@ -60,7 +59,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         """
         assert len(self.models) > 0, 'Model not trained'
         view_weights = pd.DataFrame({"view": self.views_selected, "alpha": np.abs(self.alphas)})
-        return view_weights.groupby('view').sum() / np.sum(np.abs(self.alphas))
+        return (view_weights.groupby('view').sum() / np.sum(np.abs(self.alphas))).sort_values()
 
     def fit(self, X, Y, edge_estimation_cv = None):
         """
