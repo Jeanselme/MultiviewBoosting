@@ -59,7 +59,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         """
         assert len(self.models) > 0, 'Model not trained'
         view_weights = pd.DataFrame({"view": self.views_selected, "alpha": np.abs(self.alphas)})
-        return (view_weights.groupby('view').sum() / np.sum(np.abs(self.alphas))).sort_values()
+        return (view_weights.groupby('view').sum() / np.sum(np.abs(self.alphas))).sort_values('alpha')
 
     def fit(self, X, Y, edge_estimation_cv = None):
         """
