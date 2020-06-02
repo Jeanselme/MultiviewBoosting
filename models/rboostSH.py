@@ -7,16 +7,14 @@ class RBoostSH(BoostSH):
     
     def __init__(self, basemodel, views, num_estimators = 10, sigma = 0.15, gamma = 0.3):
         """
-            Boost SH : Build a adaboost classification for multiview with shared weights
-            Greedy approach in which each view is tested to evaluate the one with larger
-            edge
+            rBoost SH : Build a adaboost classification for multiview with shared weights
+            Multi Arm Bandit approach in which a view is selected 
             
             Arguments:
                 model {sklearn model} -- Base model to use on each views
                 views {Dict of pd Dataframe} -- Views to use for the task 
                     (index much match with train **and** test)
                 num_estimators {int} -- Number of models to train
-                learning_rate {float} --  Learning rate for the adaboost (default: .01)
                 sigma {float} -- Used for theoretical guarantee
                 gamma {float} -- Same
         """
