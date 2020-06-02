@@ -43,12 +43,12 @@ class BoostSH(BaseEstimator, ClassifierMixin):
                 edge {float} -- Edge of the model (estimated on train or cv)
                 forecast {pd.DataFrame} -- Forecast for each data points (train or cv)
         """
-        model = clone(self.basemodel).fit(data, labels, sample_weight = weights)
+        model = clone(self.basemodel).fit(data.values, labels.values, sample_weight = weights.values)
         if edge_estimation_cv is None:
-            forecast = model.predict(data)
+            forecast = model.predict(data.values)
         else:
-            forecast = cross_val_predict(clone(self.basemodel), data, labels, \
-                cv = edge_estimation_cv, fit_params = {'sample_weight': weights})
+            forecast = cross_val_predict(clone(self.basemodel), data.values, labels.values, \
+                cv = edge_estimation_cv, fit_params = {'sample_weight': weights.values})
         edge = (weights * 2 * ((forecast == labels) - .5)).sum()
 
         return model, edge, forecast
@@ -105,9 +105,9 @@ class BoostSH(BaseEstimator, ClassifierMixin):
                 data = self.views[v].loc[X.index]
 
             if predictions is None:
-                predictions = pd.DataFrame(m.predict_proba(data)*a, index = X.index)
+                predictions = pd.DataFrame(m.predict_proba(data.values)*a, index = X.index)
             else:
-                predictions += m.predict_proba(data)*a
+                predictions += m.predict_proba(data.values)*a
 
         return predictions.values / np.sum(self.alphas)
 
