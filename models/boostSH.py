@@ -23,6 +23,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         self.views = views
 
         self.models = []
+        self.used_classes = []
         self.alphas = []
         self.views_selected = []
 
@@ -51,7 +52,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
                 cv = edge_estimation_cv, fit_params = {'sample_weight': weights.values})
         edge = (weights * 2 * ((forecast == labels) - .5)).sum()
 
-        return model, edge, forecast
+        return model, edge, forecast, sorted(np.unique(labels))
 
     def view_weights(self):
         """
@@ -81,9 +82,9 @@ class BoostSH(BaseEstimator, ClassifierMixin):
             weights /= weights.sum()
 
             # For each view compute the edge
-            models, edges, forecast = {}, {}, {}
+            models, edges, forecast, classes = {}, {}, {}, {}
             for v in self.views:
-                models[v], edges[v], forecast[v] = self.__compute_edge__(self.views[v].loc[X.index], Y, weights, edge_estimation_cv)
+                models[v], edges[v], forecast[v], classes[v] = self.__compute_edge__(self.views[v].loc[X.index], Y, weights, edge_estimation_cv)
             best_model = max(edges, key = lambda k: edges[k])
             alpha = .5 *  np.log((1 + edges[best_model]) / (1 - edges[best_model]))
 
@@ -93,19 +94,20 @@ class BoostSH(BaseEstimator, ClassifierMixin):
             self.models.append(models[best_model])
             self.alphas.append(alpha)
             self.views_selected.append(best_model)
+            self.used_classes.append(classes[best_model])
 
         return self
 
     def predict_proba(self, X):
         assert len(self.models) > 0, 'Model not trained'
         predictions = pd.DataFrame(np.zeros((len(X), len(self.classes))), index = X.index, columns = self.classes)
-        for m, a, v in zip(self.models, self.alphas, self.views_selected):
+        for m, a, v, c in zip(self.models, self.alphas, self.views_selected, self.used_classes):
             if v == 'original':
                 data = X
             else:
                 data = self.views[v].loc[X.index]
 
-            predictions += m.predict_proba(data.values)*a
+            predictions += pd.DataFrame(m.predict_proba(data.values), index = X.index, columns = c)*a
 
         return predictions / predictions.values.sum(axis = 1)[:, None]
 

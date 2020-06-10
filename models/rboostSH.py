@@ -52,7 +52,7 @@ class RBoostSH(BoostSH):
             selected_view = np.random.choice(views, p = q_views)
 
             # Training model
-            model, edge, forecast = self.__compute_edge__(self.views[selected_view].loc[X.index], Y, weights, edge_estimation_cv)
+            model, edge, forecast, classes = self.__compute_edge__(self.views[selected_view].loc[X.index], Y, weights, edge_estimation_cv)
             alpha = .5 *  np.log((1 + edge) / (1 - edge))
 
             # Update weights
@@ -67,5 +67,6 @@ class RBoostSH(BoostSH):
             self.models.append(model)
             self.alphas.append(alpha)
             self.views_selected.append(selected_view)
+            self.used_classes.append(classes)
 
         return self
