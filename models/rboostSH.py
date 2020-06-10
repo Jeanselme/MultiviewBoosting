@@ -34,6 +34,7 @@ class RBoostSH(BoostSH):
         """
         # Add training in the pool
         self.views['original'] = X
+        self.classes = np.unique(Y)
         views = list(self.views.keys())
         weights = pd.Series(1, index= X.index)
         M = len(views)

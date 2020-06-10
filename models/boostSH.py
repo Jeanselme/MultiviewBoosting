@@ -73,6 +73,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         """
         # Add training in the pool
         self.views['original'] = X
+        self.classes = np.unique(Y)
         weights = pd.Series(1, index= X.index)
         
         for i in range(self.num_estimators):
@@ -97,19 +98,16 @@ class BoostSH(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self, X):
         assert len(self.models) > 0, 'Model not trained'
-        predictions = None
+        predictions = pd.DataFrame(np.zeros((len(X), len(self.classes))), index = X.index, columns = self.classes)
         for m, a, v in zip(self.models, self.alphas, self.views_selected):
             if v == 'original':
                 data = X
             else:
                 data = self.views[v].loc[X.index]
 
-            if predictions is None:
-                predictions = pd.DataFrame(m.predict_proba(data.values)*a, index = X.index)
-            else:
-                predictions += m.predict_proba(data.values)*a
+            predictions += m.predict_proba(data.values)*a
 
-        return predictions.values / np.sum(self.alphas)
+        return predictions / predictions.values.sum(axis = 1)[:, None]
 
     def predict(self, X):
-        return np.argmax(self.predict_proba(X), axis = 1)
+        return self.predict_proba(X).idxmax(axis = 1)
