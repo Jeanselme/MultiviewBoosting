@@ -107,7 +107,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
             else:
                 data = self.views[v].loc[X.index]
 
-            predictions += pd.DataFrame(m.predict_proba(data.values), index = X.index, columns = c)*a
+            predictions += pd.DataFrame(m.predict_proba(data.values), index = data.index, columns = c)*a
 
         return predictions / predictions.values.sum(axis = 1)[:, None]
 
