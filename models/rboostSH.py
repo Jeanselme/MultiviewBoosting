@@ -5,7 +5,7 @@ import numpy as np
 
 class RBoostSH(BoostSH):
     
-    def __init__(self, basemodel, views, num_estimators = 10, sigma = 0.15, gamma = 0.3):
+    def __init__(self, basemodel, views, num_estimators = 10, learning_rate = 1., sigma = 0.15, gamma = 0.3):
         """
             rBoost SH : Build a adaboost classification for multiview with shared weights
             Multi Arm Bandit approach in which a view is selected 
@@ -46,14 +46,16 @@ class RBoostSH(BoostSH):
         for i in range(self.num_estimators):
             # Normalize weights
             weights /= weights.sum()
-
+            if weights.sum() == 0:
+                break
+                
             # Bandit selection of best view
             q_views = (1 - self.gamma) * p_views / p_views.sum() + self.gamma / M
             selected_view = np.random.choice(views, p = q_views)
 
             # Training model
             model, edge, forecast, classes = self.__compute_edge__(self.views[selected_view].loc[X.index], Y, weights, edge_estimation_cv)
-            alpha = .5 *  np.log((1 + edge) / (1 - edge))
+            alpha = self.learning_rate * .5 *  np.log((1 + edge) / (1 - edge))
 
             # Update weights
             weights *= np.exp(- alpha * 2 * ((forecast == Y) - .5))

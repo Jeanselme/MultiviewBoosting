@@ -5,7 +5,7 @@ from sklearn.model_selection import cross_val_predict
 
 class BoostSH(BaseEstimator, ClassifierMixin):
     
-    def __init__(self, basemodel, views, num_estimators = 10):
+    def __init__(self, basemodel, views, num_estimators = 10, learning_rate = 1.):
         """
             Boost SH : Build a adaboost classification for multiview with shared weights
             Greedy approach in which each view is tested to evaluate the one with larger
@@ -28,6 +28,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         self.views_selected = []
 
         self.num_estimators = num_estimators
+        self.learning_rate = learning_rate
 
     def __compute_edge__(self, data, labels, weights, edge_estimation_cv):
         """
@@ -80,13 +81,15 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         for i in range(self.num_estimators):
             # Normalize weights
             weights /= weights.sum()
+            if weights.sum() == 0:
+                break
 
             # For each view compute the edge
             models, edges, forecast, classes = {}, {}, {}, {}
             for v in self.views:
                 models[v], edges[v], forecast[v], classes[v] = self.__compute_edge__(self.views[v].loc[X.index], Y, weights, edge_estimation_cv)
             best_model = max(edges, key = lambda k: edges[k])
-            alpha = .5 *  np.log((1 + edges[best_model]) / (1 - edges[best_model]))
+            alpha = self.learning_rate * .5 *  np.log((1 + edges[best_model]) / (1 - edges[best_model]))
 
             # Update weights
             weights *= np.exp(- alpha * 2 * ((forecast[v] == Y) - .5))
