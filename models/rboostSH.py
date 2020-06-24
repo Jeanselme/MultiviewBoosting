@@ -63,8 +63,8 @@ class RBoostSH(BoostSH):
             # Update arm probability
             r_views = pd.Series(0, index = views)
             r_views[selected_view] = (1 - np.sqrt(1 - edge ** 2)) / q_views[selected_view]
-            p_views *= np.exp(self.gamma / (3*M) * r_views + \
-                self.sigma / (q_views * np.sqrt(self.num_estimators / M)))
+            p_views *= np.exp(self.gamma / (3*M) * (r_views + \
+                self.sigma / (q_views * np.sqrt(self.num_estimators * M))))
             
             self.models.append(model)
             self.alphas.append(alpha)
