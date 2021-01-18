@@ -112,7 +112,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
 
             predictions += pd.DataFrame(m.predict_proba(data.values), index = data.index, columns = c)*a
 
-        return predictions / predictions.values.sum(axis = 1)[:, None]
+        return (predictions / predictions.values.sum(axis = 1)[:, None]).fillna(-1)
 
     def predict(self, X):
         return self.predict_proba(X).idxmax(axis = 1)
