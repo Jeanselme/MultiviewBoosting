@@ -89,7 +89,10 @@ class BoostSH(BaseEstimator, ClassifierMixin):
             for v in self.views:
                 models[v], edges[v], forecast[v], classes[v] = self.__compute_edge__(self.views[v].loc[X.index], Y, weights, edge_estimation_cv)
             best_model = max(edges, key = lambda k: edges[k])
-            alpha = self.learning_rate * .5 *  np.log((1 + edges[best_model]) / (1 - edges[best_model]))
+            if edges[best_model] == 1:
+                alpha = self.learning_rate * .5 * 10.
+            else:
+                alpha = self.learning_rate * .5 *  np.log((1 + edges[best_model]) / (1 - edges[best_model]))
 
             # Update weights
             weights *= np.exp(- alpha * 2 * ((forecast[v] == Y) - .5))
