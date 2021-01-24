@@ -57,6 +57,8 @@ class RBoostSH(BoostSH):
             model, edge, forecast, classes = self.__compute_edge__(self.views[selected_view].loc[X.index], Y, weights, edge_estimation_cv)
             if edge == 1:
                 alpha = self.learning_rate * .5 * 10.
+            elif edge == 0:
+                alpha = 0
             else:
                 alpha = self.learning_rate * .5 *  np.log((1 + edge) / (1 - edge))
 
