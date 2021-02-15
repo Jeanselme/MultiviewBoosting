@@ -1,4 +1,4 @@
-from models.boostSH import BoostSH
+from .boostSH import BoostSH, eps
 
 import pandas as pd
 import numpy as np
@@ -55,7 +55,7 @@ class RBoostSH(BoostSH):
 
             # Training model
             model, edge, forecast, classes = self.__compute_edge__(self.views[selected_view].loc[X.index], Y, weights, edge_estimation_cv)
-            if edge == 1:
+            if 1 - edge < eps:
                 alpha = self.learning_rate * .5 * 10.
             elif edge <= 0:
                 alpha = 0

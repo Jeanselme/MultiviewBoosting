@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.base import clone, BaseEstimator, ClassifierMixin
 from sklearn.model_selection import cross_val_predict
 
+eps = 10**(-6)
+
 class BoostSH(BaseEstimator, ClassifierMixin):
     
     def __init__(self, basemodel, views, num_estimators = 10, learning_rate = 1.):
@@ -89,7 +91,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
             for v in self.views:
                 models[v], edges[v], forecast[v], classes[v] = self.__compute_edge__(self.views[v].loc[X.index], Y, weights, edge_estimation_cv)
             best_model = max(edges, key = lambda k: edges[k])
-            if edges[best_model] == 1:
+            if (1 - edges[best_model]) < eps:
                 alpha = self.learning_rate * .5 * 10.
             else:
                 alpha = self.learning_rate * .5 *  np.log((1 + edges[best_model]) / (1 - edges[best_model]))
