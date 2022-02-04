@@ -7,21 +7,21 @@ eps = 10**(-6)
 
 class BoostSH(BaseEstimator, ClassifierMixin):
     
-    def __init__(self, basemodel, views, num_estimators = 10, learning_rate = 1.):
+    def __init__(self, base_estimator, views, n_estimators = 10, learning_rate = 1.):
         """
             Boost SH : Build a adaboost classification for multiview with shared weights
             Greedy approach in which each view is tested to evaluate the one with larger
             edge
             
             Arguments:
-                basemodel {sklearn model} -- Base model to use on each views
+                base_estimator {sklearn model} -- Base model to use on each views
                 views {Dict of pd Dataframe} -- Views to use for the task 
                     (index much match with train **and** test)
-                num_estimators {int} -- Number of models to train
-                learning_rate {float} --  Learning rate for the adaboost (default: .01)
+                n_estimators {int} -- Number of models to train
+                learning_rate {float} --  Learning rate for the adaboost (default: 1)
         """
         super(BoostSH, self).__init__()
-        self.basemodel = basemodel
+        self.base_estimator = base_estimator
         self.views = views
 
         self.models = []
@@ -29,7 +29,7 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         self.alphas = []
         self.views_selected = []
 
-        self.num_estimators = num_estimators
+        self.n_estimators = n_estimators
         self.learning_rate = learning_rate
 
     def __compute_edge__(self, data, labels, weights, edge_estimation_cv):
@@ -43,15 +43,15 @@ class BoostSH(BaseEstimator, ClassifierMixin):
                 edge_estimation_cv {[type]} -- [description]
 
             Returns
-                model {sklearn model} -- Basemodel trained on all data
+                model {sklearn model} -- base_estimator trained on all data
                 edge {float} -- Edge of the model (estimated on train or cv)
                 forecast {pd.DataFrame} -- Forecast for each data points (train or cv)
         """
-        model = clone(self.basemodel).fit(data.values, labels.values, sample_weight = weights.values)
+        model = clone(self.base_estimator).fit(data.values, labels.values, sample_weight = weights.values)
         if edge_estimation_cv is None:
             forecast = model.predict(data.values)
         else:
-            forecast = cross_val_predict(clone(self.basemodel), data.values, labels.values, \
+            forecast = cross_val_predict(clone(self.base_estimator), data.values, labels.values, \
                 cv = edge_estimation_cv, fit_params = {'sample_weight': weights.values})
         edge = (weights * 2 * ((forecast == labels) - .5)).sum()
 
@@ -75,12 +75,14 @@ class BoostSH(BaseEstimator, ClassifierMixin):
                 edge_estimation_cv {int} -- Number of fold used to estimate the edge 
                     (default: None - Performance are computed on training set)
         """
+        self.check_impute(X, Y)
+
         # Add training in the pool
         self.views['original'] = X
         self.classes = np.unique(Y)
         weights = pd.Series(1, index= X.index)
         
-        for i in range(self.num_estimators):
+        for i in range(self.n_estimators):
             # Normalize weights
             weights /= weights.sum()
             if weights.sum() == 0:
@@ -107,6 +109,8 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         return self
 
     def predict_proba(self, X):
+        self.check_impute(X)
+
         assert len(self.models) > 0, 'Model not trained'
         predictions = pd.DataFrame(np.zeros((len(X), len(self.classes))), index = X.index, columns = self.classes)
         for m, a, v, c in zip(self.models, self.alphas, self.views_selected, self.used_classes):
@@ -120,4 +124,13 @@ class BoostSH(BaseEstimator, ClassifierMixin):
         return (predictions / predictions.values.sum(axis = 1)[:, None]).fillna(-1)
 
     def predict(self, X):
+        self.check_impute(X)
+
         return self.predict_proba(X).idxmax(axis = 1)
+
+    def check_impute(self, X, Y = None):
+        assert isinstance(X, pd.DataFrame), "Not right format for x"
+
+        if Y is not None:
+            assert isinstance(Y, pd.Series), "Not right format for y"
+            assert len(Y.unique()) > 1, "One class in data"

@@ -5,7 +5,7 @@ import numpy as np
 
 class RBoostSH(BoostSH):
     
-    def __init__(self, basemodel, views, num_estimators = 10, learning_rate = 1., sigma = 0.15, gamma = 0.3):
+    def __init__(self, base_estimator, views, n_estimators = 10, learning_rate = 1., sigma = 0.15, gamma = 0.3):
         """
             rBoost SH : Build a adaboost classification for multiview with shared weights
             Multi Arm Bandit approach in which a view is selected 
@@ -14,11 +14,11 @@ class RBoostSH(BoostSH):
                 model {sklearn model} -- Base model to use on each views
                 views {Dict of pd Dataframe} -- Views to use for the task 
                     (index much match with train **and** test)
-                num_estimators {int} -- Number of models to train
+                n_estimators {int} -- Number of models to train
                 sigma {float} -- Used for theoretical guarantee
                 gamma {float} -- Same
         """
-        super(RBoostSH, self).__init__(basemodel, views, num_estimators)
+        super(RBoostSH, self).__init__(base_estimator, views, n_estimators, learning_rate)
         self.sigma = sigma
         self.gamma = gamma
 
@@ -32,6 +32,8 @@ class RBoostSH(BoostSH):
                 edge_estimation_cv {int} -- Number of fold used to estimate the edge 
                     (default: None - Performance are computed on training set)
         """
+        self.check_impute(X, Y)
+        
         # Add training in the pool
         self.views['original'] = X
         self.classes = np.unique(Y)
@@ -40,10 +42,10 @@ class RBoostSH(BoostSH):
         M = len(views)
 
         p_views = pd.Series(np.exp(self.sigma * self.gamma / 3 * \
-            np.sqrt(self.num_estimators / M)),
+            np.sqrt(self.n_estimators / M)),
             index = views)
         
-        for i in range(self.num_estimators):
+        for i in range(self.n_estimators):
             # Normalize weights
             weights /= weights.sum()
             if weights.sum() == 0:
@@ -70,7 +72,7 @@ class RBoostSH(BoostSH):
             square = np.sqrt(1 - edge ** 2) if edge < 1 else 0
             r_views[selected_view] = (1 - square) / q_views[selected_view]
             p_views *= np.exp(self.gamma / (3*M) * (r_views + \
-                self.sigma / (q_views * np.sqrt(self.num_estimators * M))))
+                self.sigma / (q_views * np.sqrt(self.n_estimators * M))))
             
             self.models.append(model)
             self.alphas.append(alpha)
